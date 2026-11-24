@@ -2,7 +2,8 @@
 var nextId = 1;
 var pending = /* @__PURE__ */ new Map();
 var worker = new Worker(new URL("./browser/worker.js", import.meta.url), { type: "module" });
-var REQUEST_TIMEOUT_MS = 2e4;
+// Allow the first mobile dictionary download to finish on ordinary Wi-Fi.
+var REQUEST_TIMEOUT_MS = 3e5;
 var workerFailure = null;
 worker.addEventListener("error", (event) => {
   workerFailure = new Error(`openjtalkjs browser worker failed to load: ${event.message || "unknown error"}`);
