@@ -1,6 +1,6 @@
 import {Wllama} from './assets/wllama4/package/esm/index.js';
 import {pipeline,env,Tensor} from './assets/transformers.js';
-import {configure,synthesizeAsync,g2pAsync,runFrontendAsync} from './assets/jtalk/package/dist/browser.js';
+import {configure,synthesizeAsync,g2pAsync,runFrontendAsync} from './assets/jtalk/package/dist/browser.js?v=20261124-2';
 import {cleanReading,romanize,vocabulary,koreanTranslationInput,beginnerCorrection,introductionReply,similarCorrection} from './japanese.mjs';
 const base=new URL('./',import.meta.url),asset=path=>new URL('assets/'+path,base).href;
 env.allowLocalModels=false;env.allowRemoteModels=true;env.useBrowserCache=true;

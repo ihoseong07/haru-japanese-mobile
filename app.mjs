@@ -6,7 +6,7 @@ function error(text){$('error').textContent=text;$('error').hidden=!text;}
 function status(text,percent){$('statusBox').hidden=!text;$('statusText').textContent=text||'';$('progress').hidden=!Number.isFinite(percent);if(Number.isFinite(percent))$('progress').value=percent;}
 function lock(value){busy=value;for(const id of ['mic','repeat','hint','sendRecognized','start','basic'])$(id).disabled=value;$('textForm').querySelector('button').disabled=value;}
 function ensureWorker(){
- if(worker)return;worker=new Worker(new URL('./engine.mjs',import.meta.url),{type:'module'});
+ if(worker)return;worker=new Worker(new URL('./engine.mjs?v=20261124-2',import.meta.url),{type:'module'});
  worker.onmessage=({data})=>{if(data.status){status(data.status,data.progress);return;}const task=pending.get(data.id);if(task){pending.delete(data.id);clearTimeout(task.timer);data.error?task.reject(new Error(data.error)):task.resolve(data.result);}};
  worker.onerror=event=>{error('이 브라우저에서 음성 엔진을 열지 못했어요. 최신 Safari 또는 Chrome으로 열어주세요.');for(const task of pending.values()){clearTimeout(task.timer);task.reject(new Error(event.message||'음성 엔진 오류'));}pending.clear();worker.terminate();worker=null;};
 }
