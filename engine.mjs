@@ -1,25 +1,26 @@
-import {Wllama} from './assets/wllama4/package/esm/index.js';
-import {pipeline,env,Tensor} from './assets/transformers.js';
-import {configure,synthesizeAsync,g2pAsync,runFrontendAsync} from './assets/jtalk/package/dist/browser.js?v=20261124-2';
+let Wllama,pipeline,env,Tensor,configure,synthesizeAsync,g2pAsync,runFrontendAsync;
 import {cleanReading,romanize,vocabulary,koreanTranslationInput,beginnerCorrection,introductionReply,similarCorrection} from './japanese.mjs';
 const base=new URL('./',import.meta.url),asset=path=>new URL('assets/'+path,base).href;
-env.allowLocalModels=false;env.allowRemoteModels=true;env.useBrowserCache=true;
-env.backends.onnx.wasm.wasmPaths=asset('ort/');env.backends.onnx.wasm.numThreads=1;
 let llm,asr,voiceReady;
 const tell=(text,progress)=>postMessage({status:text,progress});
-async function voice(){voiceReady ||= configure({dicUrl:asset('dictionary'),voiceUrl:asset('voice.htsvoice')});try{await voiceReady;}catch(e){voiceReady=null;throw e;}}
+async function voice(){if(!configure)({configure,synthesizeAsync,g2pAsync,runFrontendAsync}=await import('./assets/jtalk/package/dist/browser.js?v=20261124-2'));voiceReady ||= configure({dicUrl:asset('dictionary'),voiceUrl:asset('voice.htsvoice')});try{await voiceReady;}catch(e){voiceReady=null;throw e;}}
 async function languageModel(){
  if(llm)return llm;
+ ({Wllama}=await import('./assets/wllama4/package/esm/index.js')); 
  tell('자유 회화 모델 준비 중…');
  const model=new Wllama({default:asset('wllama4/package/esm/wasm/wllama.wasm')},{logger:{debug(){},log(){},warn(){},error:console.error}});
  model.setCompat({wasm:asset('compat/package/wasm/wllama.wasm')});
  await model.loadModelFromUrl('https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_K_M.gguf',{
-   n_ctx:1536,n_threads:1,n_parallel:1,reasoning:false,default_template_kwargs:{enable_thinking:false},
+   n_ctx:768,n_threads:1,n_parallel:1,n_gpu_layers:0,reasoning:false,default_template_kwargs:{enable_thinking:false},
    progressCallback:({loaded,total})=>tell('자유 회화 모델을 내려받고 있어요',total?loaded/total*100:undefined)
  });llm=model;return llm;
 }
 async function speechModel(){
- if(asr)return asr;tell('한국어·일본어 음성 인식을 준비해요');
+ if(asr)return asr;
+ ({pipeline,env,Tensor}=await import('./assets/transformers.js'));
+ env.allowLocalModels=false;env.allowRemoteModels=true;env.useBrowserCache=true;
+ env.backends.onnx.wasm.wasmPaths=asset('ort/');env.backends.onnx.wasm.numThreads=1;
+ tell('한국어·일본어 음성 인식을 준비해요');
  asr=await pipeline('automatic-speech-recognition','onnx-community/whisper-tiny',{dtype:'q8',device:'wasm',progress_callback:event=>{if(event.status==='progress')tell('음성 인식 모델을 내려받고 있어요',event.progress);}});return asr;
 }
 async function generate(messages,fields){
@@ -48,11 +49,11 @@ async function tutor(history){
    meaning=(await generate([{role:'system',content:'Translate Japanese into Korean accurately. Preserve tense and objects. Example: 昨日、パンを食べました。 -> 어제 빵을 먹었어요. Return only Korean in translation.'},{role:'user',content:japanese}],['translation'])).translation;
  }
  if(!japanese?.trim()||/[가-힣]/.test(japanese))throw new Error('일본어 표현을 만들지 못했어요. 조금 짧게 다시 말해보세요.');
- const details=await analyze(japanese);
+ const details={};
  return {japanese:japanese+(korean?' 日本語で言ってみましょう。':known?' もう一度言ってみましょう。':''),...details,korean:meaning,correction,translation:korean?japanese:''};
 }
 async function run(task){
- if(task.mode==='prepare'){await voice();await languageModel();await speechModel();return {ready:true};}
+ if(task.mode==='prepare')return {ready:true};
  if(task.mode==='tts'){await voice();const result=await synthesizeAsync(task.text,{speed:0.85});return {samples:result.pcm,rate:result.sampleRate};}
  if(task.mode==='analyze')return analyze(task.text);
  if(task.mode==='tutor')return tutor(task.history);

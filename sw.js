@@ -1,5 +1,5 @@
-const CACHE='haru-mobile-v3';
-self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(['./','./index.html','./style.css','./app.mjs','./engine.mjs','./japanese.mjs','./lessons.mjs','./icon.svg','./pronunciation.mjs','./pronunciation.mjs?v=20261124-3','./app.mjs?v=20261124-3','./style.css?v=20261124-3','./engine.mjs?v=20261124-2'])));self.skipWaiting();});
+const CACHE='haru-mobile-v4';
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(['./','./index.html','./style.css','./app.mjs','./engine.mjs','./japanese.mjs','./lessons.mjs','./icon.svg','./pronunciation.mjs','./pronunciation.mjs?v=20261124-4','./app.mjs?v=20261124-4','./style.css?v=20261124-4','./engine.mjs?v=20261124-4'])));self.skipWaiting();});
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
 self.addEventListener('fetch',event=>{
  if(event.request.method!=='GET'||new URL(event.request.url).origin!==location.origin)return;
